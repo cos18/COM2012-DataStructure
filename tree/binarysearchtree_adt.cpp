@@ -211,7 +211,9 @@ void deleteNode(Node** rootNode, Node* target, int getRightNode){
                     changeNode = childTreeRoot->child[1-getRightNode];
                 }
                 target->data = changeNode->data;
-                changeNode->parent->child[1-getRightNode] = changeNode->child[getRightNode];
+                if(childTreeRoot==changeNode) target->child[getRightNode] = changeNode->child[getRightNode];
+                else changeNode->parent->child[1-getRightNode] = changeNode->child[getRightNode];
+                if(changeNode->child[getRightNode]) changeNode->child[getRightNode]->parent = changeNode->parent;
                 if(!changeNode->parent->child[1-getRightNode]) changeNode->parent->childCnt -= 1;
                 free(changeNode);
                 break;
@@ -236,7 +238,9 @@ void deleteNode(Node** rootNode, Node* target, int getRightNode){
                     changeNode = childTreeRoot->child[1 - getRightNode];
                 }
                 target->data = changeNode->data;
-                changeNode->parent->child[1 - getRightNode] = changeNode->child[getRightNode];
+                if(childTreeRoot==changeNode) target->child[getRightNode] = changeNode->child[getRightNode];
+                else changeNode->parent->child[1-getRightNode] = changeNode->child[getRightNode];
+                if(changeNode->child[getRightNode]) changeNode->child[getRightNode]->parent = changeNode->parent;
                 if(!changeNode->parent->child[1-getRightNode]) changeNode->parent->childCnt -= 1;
                 free(changeNode);
                 break;
