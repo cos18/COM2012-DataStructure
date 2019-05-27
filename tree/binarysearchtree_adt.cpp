@@ -16,7 +16,7 @@ void printBST(Node* rootNode);
 void inorderTraverse(Node* rootNode, int isReversed); // 0 - inorder
 int getMinMax(Node* rootNode, int isMax); // 0 - min , 1 - Max
 void findNodePath(Node* rootNode, Node* target, int isSearching); // 시작시 0
-void deleteNode(Node** rootNode, Node* target, int getRightNode);
+void deleteNode(Node*& rootNode, Node* target, int getRightNode);
 int getHeight(Node* rootNode, int level); // 기본값 - 1
 int getChild(Node* target, int isRight);
 int cntNode(Node* rootNode);
@@ -84,10 +84,10 @@ int main(){
                 findNodePath(rootBSTNode, findNode(rootBSTNode, realnum), 0);
                 break;
             case 'd':
-                deleteNode(&rootBSTNode, findNode(rootBSTNode, realnum), 0);
+                deleteNode(rootBSTNode, findNode(rootBSTNode, realnum), 0);
                 break;
             case 'D':
-                deleteNode(&rootBSTNode, findNode(rootBSTNode, realnum), 1);
+                deleteNode(rootBSTNode, findNode(rootBSTNode, realnum), 1);
                 break;
             case 'H':
                 printf("%d\n", getHeight(rootBSTNode, 1));
@@ -188,7 +188,7 @@ void findNodePath(Node* rootNode, Node* target, int isSearching){
     printf(" > %s", (rootNode->data < target->data)?"Right":"Left");
     return findNodePath(rootNode->child[rootNode->data < target->data], target, 1);
 }
-void deleteNode(Node** rootNode, Node* target, int getRightNode){
+void deleteNode(Node*& rootNode, Node* target, int getRightNode){
     if(!target) return;
     Node* parent = target->parent;
     if(parent){
@@ -225,10 +225,10 @@ void deleteNode(Node** rootNode, Node* target, int getRightNode){
         switch (target->childCnt){
             case 0:
                 free(target);
-                *rootNode = NULL;
+                rootNode = NULL;
                 break;
             case 1:
-                *rootNode = (target->child[0]) ? target->child[0] : target->child[1];
+                rootNode = (target->child[0]) ? target->child[0] : target->child[1];
                 free(target);
                 break;
             case 2: {
