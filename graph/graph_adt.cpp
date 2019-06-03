@@ -19,16 +19,8 @@ typedef struct graphNode{
 
 void help(){
     printf("=====HELP=====\n");
-    printf("기본 기능은 실습활동 명령어와 동일하나 일부 변경사항이 존재합니다.\n");
-    printf("1. deleteNode 작업의 명령어가 세분화되었습니다.\n");
-    printf("지우려는 노드의 자식노드가 두개 존재시 대체할 노드를 선택할 수 있습니다.\n");
-    printf("\'d33\' 입력시 지우려는 노드의 왼쪽 자식노드트리에서,\n");
-    printf("\'D33\' 입력시 지우려는 노드의 오른쪽 자식노드트리에서 대체할 노드를 가져옵니다.\n");
-    printf("\'-33\' 명령어는 사용할 수 없습니다.\n\n");
-    printf("2. G, L 명령어 입력시 괄호를 쓰면 안됩니다.\n");
-    printf("ex) \'G(30)\' (X) -> \'G30\' (O)\n\n");
-    printf("3. 이하 명령어는 실습활동지에 없는 명령어를 구현한 목록입니다.\n");
-    printf("h : 도움말 출력 (소문자에 유의)\n");
+    printf("기본 기능은 실습활동 명령어와 동일하나 실습활동지에 없는 명령어를 구현한 목록입니다.\n");
+    printf("S : 도움말 출력\n");
     printf("Q : 프로그램 종료\n");
     printf("==============\n");
 }
@@ -41,15 +33,17 @@ void addEdge(graphNode* root, char v1, char v2);
 void printGraph(graphNode* root);
 void printEdge(connectNode* connect);
 int getDegreeOfVertex(graphNode* target);
-int isConnected(graphNode* root);
+int isPathExist(graphNode* root, char v1, char v2);
+int checkConnect(graphNode* root, graphNode* target, char destination, int* alreadyVisit);
+int isGraphConnected(graphNode *root);
 int isEmpty(graphNode* root);
 void deleteVertex(graphNode*& root, char target);
 void removeGraphNode(graphNode*& root, char target);
-int isPathExist(graphNode* root, char v1, char v2);
+int isConnectExist(graphNode *root, char v1, char v2);
 int getVertexCNT(graphNode* root);
 int getEdgeCNT(graphNode* root);
 void deleteEdge(graphNode* root, char v1, char v2);
-void removeConnetNode(connectNode*& root, char target);
+void removeConnectNode(connectNode *&root, char target);
 void renameVertex(graphNode* root, char before, char after);
 void clear(graphNode* root);
 
@@ -89,6 +83,11 @@ int main(){
             case 'V':{
                 int d = getDegreeOfVertex(getVertex(rootGraphNode, command[2]));
                 if(d!=-1) printf("%d\n", d);
+                break;
+            }
+            case 'C':{
+                int c = isGraphConnected(rootGraphNode);
+                if(c!=-1) printf("%s\n", c?"TRUE":"FALSE");
                 break;
             }
             case 'N':{
@@ -181,7 +180,7 @@ void addEdge(graphNode* root, char v1, char v2){
     n[0] = getVertex(root, v1);
     n[1] = getVertex(root, v2);
     if(n[0] == NULL || n[1] == NULL) return;
-    if(isPathExist(root, v1, v2)){
+    if(isConnectExist(root, v1, v2)){
         printf("[ERROR] 정점 \'%c\'와(과) \'%c\' 사이 경로는 이미 존재하는 경로입니다.\n", v1, v2);
         return;
     }
@@ -225,7 +224,56 @@ int getDegreeOfVertex(graphNode* target){
     }
     return result;
 }
-int isConnected(graphNode* root);
+int getVertexNum(graphNode* root, char target){
+    if(root->data==target) return 0;
+    return getVertexNum(root->next, target)+1;
+}
+int isPathExist(graphNode* root, char v1, char v2){
+    graphNode* from = getVertex(root, v1);
+    graphNode* to = getVertex(root, v2);
+    if(!from || !to) return -1;
+    if(isConnectExist(root, v1, v2)) return TRUE;
+    int cnt = getVertexCNT(root);
+    int fromLocate = getVertexNum(root, v1);
+    int* alreadyVisit = (int*)malloc(sizeof(int)*cnt);
+    for(int i=0;i<cnt;i++) alreadyVisit[i] = (i==fromLocate)?1:0;
+    int r = checkConnect(root, from, v2, alreadyVisit);
+    free(alreadyVisit);
+    return r;
+}
+int checkConnect(graphNode* root, graphNode* target, char destination, int* alreadyVisit){
+    int cnt = getVertexCNT(root);
+    connectNode* c = target->connect;
+    if(isConnectExist(root, target->data, destination)) return TRUE;
+    while(c){
+        int cLocate = getVertexNum(root, c->data);
+        if(!alreadyVisit[cLocate]){
+            int* newAlreadyVisit = (int*)malloc(sizeof(int)*cnt);
+            for(int i=0;i<cnt;i++) newAlreadyVisit[i] = (i==cLocate)?1:alreadyVisit[i];
+            int r = checkConnect(root, getVertex(root, c->data), destination, newAlreadyVisit);
+            free(newAlreadyVisit);
+            if (r) return TRUE;
+        }
+        c = c->next;
+    }
+    return FALSE;
+}
+int isGraphConnected(graphNode *root){
+    if(root->data=='\0'){
+        printf("[NOTICE] 빈 그래프입니다.\n");
+        return -1;
+    }
+    if(getVertexCNT(root)==1){
+        printf("[NOTICE] Vertex가 한개인 그래프입니다.\n");
+        return -1;
+    }
+    graphNode* destination = root->next;
+    while(destination){
+        if(!isPathExist(root, root->data, destination->data)) return FALSE;
+        destination = destination->next;
+    }
+    return TRUE;
+}
 int isEmpty(graphNode* root){
     if(!root){
         printf("[ERROR] 현제 그래프가 만들어지지 않았습니다.\n");
@@ -239,7 +287,7 @@ void deleteVertex(graphNode*& root, char target){
     if(!targetNode) return;
     connectNode* c = targetNode->connect;
     while(c){
-        removeConnetNode(getVertex(root, c->data)->connect, target);
+        removeConnectNode(getVertex(root, c->data)->connect, target);
         c = c->next;
     }
     removeGraphNode(root, target);
@@ -255,7 +303,7 @@ void removeGraphNode(graphNode*& root, char target){
     freeNode->next = targetNode->next;
     return free(targetNode);
 }
-int isPathExist(graphNode* root, char v1, char v2){
+int isConnectExist(graphNode *root, char v1, char v2){
     graphNode* target = getVertex(root, v1);
     if(!target || !getVertex(root, v2)) return -1;
     connectNode* c = target->connect;
@@ -287,18 +335,18 @@ int getEdgeCNT(graphNode* root){
     return result/2;
 }
 void deleteEdge(graphNode* root, char v1, char v2){
-    int path = isPathExist(root, v1, v2);
+    int path = isConnectExist(root, v1, v2);
     if(path!=1){
         if(path==FALSE) printf("[ERROR] \'%c\'에서 \'%c\'로 이어지는 경로가 존재하지 않습니다.\n", v1, v2);
         return;
     }
     graphNode* n1 = getVertex(root, v1);
     graphNode* n2 = getVertex(root, v2);
-    removeConnetNode(n1->connect, v2);
-    removeConnetNode(n2->connect, v1);
+    removeConnectNode(n1->connect, v2);
+    removeConnectNode(n2->connect, v1);
 }
 //Node*&
-void removeConnetNode(connectNode*& root, char target){
+void removeConnectNode(connectNode *&root, char target){
     connectNode* freeNode = root;
     if(freeNode->data == target){
         root = root->next;
